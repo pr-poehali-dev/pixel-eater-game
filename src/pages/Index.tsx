@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import VirtualJoystick from '@/components/VirtualJoystick';
 
 interface Position {
   x: number;
@@ -37,6 +38,7 @@ const PixelBallArena = () => {
   const [pixels, setPixels] = useState<Pixel[]>([]);
   const [camera, setCamera] = useState({ x: 0, y: 0 });
   const [keys, setKeys] = useState<Set<string>>(new Set());
+  const [joystickInput, setJoystickInput] = useState({ x: 0, y: 0 });
   const gameLoopRef = useRef<number>();
 
   // Инициализация игры
@@ -104,10 +106,17 @@ const PixelBallArena = () => {
       let newY = prev.position.y;
       const speed = 3;
 
+      // Клавиатурное управление
       if (keys.has('w') || keys.has('ц') || keys.has('arrowup')) newY -= speed;
       if (keys.has('s') || keys.has('ы') || keys.has('arrowdown')) newY += speed;
       if (keys.has('a') || keys.has('ф') || keys.has('arrowleft')) newX -= speed;
       if (keys.has('d') || keys.has('в') || keys.has('arrowright')) newX += speed;
+
+      // Джойстик управление
+      if (Math.abs(joystickInput.x) > 0.1 || Math.abs(joystickInput.y) > 0.1) {
+        newX += joystickInput.x * speed * 1.5;
+        newY += joystickInput.y * speed * 1.5;
+      }
 
       return {
         ...prev,
@@ -115,7 +124,7 @@ const PixelBallArena = () => {
         size: 15 + prev.level * 2
       };
     });
-  }, [keys, gameStarted]);
+  }, [keys, joystickInput, gameStarted]);
 
   // Движение ИИ
   const moveAI = useCallback(() => {
@@ -364,7 +373,7 @@ const PixelBallArena = () => {
               Управляй шариком, собирай пиксели, поглощай соперников!
             </p>
             <div className="space-y-3 text-slate-400">
-              <p><Icon name="Gamepad2" className="inline mr-2" />WASD или стрелки для движения</p>
+              <p><Icon name="Gamepad2" className="inline mr-2" />WASD/стрелки или джойстик для движения</p>
               <p><Icon name="Target" className="inline mr-2" />Собирай золотые пиксели для роста</p>
               <p><Icon name="Zap" className="inline mr-2" />Поглощай шарики меньшего уровня</p>
             </div>
@@ -427,6 +436,12 @@ const PixelBallArena = () => {
         height={600}
         className="absolute inset-0 mx-auto my-auto"
         style={{ maxWidth: '100vw', maxHeight: '100vh' }}
+      />
+
+      {/* Виртуальный джойстик для мобильных */}
+      <VirtualJoystick
+        onMove={(x, y) => setJoystickInput({ x, y })}
+        onStop={() => setJoystickInput({ x: 0, y: 0 })}
       />
     </div>
   );
